@@ -28,7 +28,7 @@ services:
   workout-service:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: src/Services/WorkoutService/Dockerfile
     container_name: sudoworkout-workout-service
     environment:
       ASPNETCORE_ENVIRONMENT: Development
@@ -41,6 +41,29 @@ services:
     depends_on:
       sqlserver:
         condition: service_healthy
+    restart: unless-stopped
+
+
+    
+  training-service:
+    build:
+      context: .
+      dockerfile: src/Services/TrainingService/Dockerfile
+    container_name: sudoworkout-training-service
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ConnectionStrings__TrainingDatabase: "Server=sqlserver,1433;Database=SudoWorkoutTrainingDb;User Id=sa;Password=${SA_PASSWORD};Encrypt=True;TrustServerCertificate=True;"
+      Services__WorkoutService__BaseUrl: "http://workout-service:8080"
+    ports:
+      - "8081:8080"
+    networks:
+      - sudoworkout-network
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      workout-service:
+        condition: service_started
     restart: unless-stopped
 
 volumes:
