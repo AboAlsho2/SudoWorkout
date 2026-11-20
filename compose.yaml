@@ -24,7 +24,32 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+      
 
+  
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: sudoworkout-rabbitmq
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:?Set RABBITMQ_DEFAULT_USER in .env}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?Set RABBITMQ_DEFAULT_PASS in .env}
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - sudoworkout-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  
   workout-service:
     build:
       context: .
@@ -45,12 +70,39 @@ services:
 
 
     
+  
+  notification-service:
+    build:
+      context: .
+      dockerfile: src/Services/NotificationService/Dockerfile
+    container_name: sudoworkout-notification-service
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Port: "5672"
+      RabbitMQ__Username: ${RABBITMQ_DEFAULT_USER}
+      RabbitMQ__Password: ${RABBITMQ_DEFAULT_PASS}
+    ports:
+      - "8082:8080"
+    networks:
+      - sudoworkout-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  
   training-service:
     build:
       context: .
       dockerfile: src/Services/TrainingService/Dockerfile
     container_name: sudoworkout-training-service
     environment:
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Port: "5672"
+      RabbitMQ__Username: ${RABBITMQ_DEFAULT_USER}
+      RabbitMQ__Password: ${RABBITMQ_DEFAULT_PASS}
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
       ConnectionStrings__TrainingDatabase: "Server=sqlserver,1433;Database=SudoWorkoutTrainingDb;User Id=sa;Password=${SA_PASSWORD};Encrypt=True;TrustServerCertificate=True;"
@@ -64,10 +116,13 @@ services:
         condition: service_healthy
       workout-service:
         condition: service_started
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
   sqlserver_data:
+  rabbitmq_data:
 
 networks:
   sudoworkout-network:

@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TrainingService", "src\Serv
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrainingService.Tests", "TrainingService.Tests\TrainingService.Tests.csproj", "{4C177167-2B74-4258-89D9-FF02F79C9E99}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NotificationService", "src\Services\NotificationService\NotificationService.csproj", "{AAC41301-85E3-49D5-B79E-CCE79DE7B662}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{4C177167-2B74-4258-89D9-FF02F79C9E99}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4C177167-2B74-4258-89D9-FF02F79C9E99}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4C177167-2B74-4258-89D9-FF02F79C9E99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AAC41301-85E3-49D5-B79E-CCE79DE7B662}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AAC41301-85E3-49D5-B79E-CCE79DE7B662}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AAC41301-85E3-49D5-B79E-CCE79DE7B662}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AAC41301-85E3-49D5-B79E-CCE79DE7B662}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -49,6 +55,7 @@ Global
 		{B221B7B3-2764-4CCD-9D7D-ACDFA10C467B} = {18A61C64-D572-4FF9-9288-3CFDB98E41FC}
 		{9CCCE1AE-52BD-4094-B704-7B1914226EF6} = {E59892EA-847E-44FA-8C73-8312C3314D5F}
 		{4C177167-2B74-4258-89D9-FF02F79C9E99} = {18A61C64-D572-4FF9-9288-3CFDB98E41FC}
+		{AAC41301-85E3-49D5-B79E-CCE79DE7B662} = {E59892EA-847E-44FA-8C73-8312C3314D5F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3735BFC0-FAE7-40E5-A639-21E1284F143F}

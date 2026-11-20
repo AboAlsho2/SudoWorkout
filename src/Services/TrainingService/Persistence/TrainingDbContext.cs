@@ -13,6 +13,8 @@ public class TrainingDbContext(
     public DbSet<TrainingSessionExercise> TrainingSessionExercises =>
         Set<TrainingSessionExercise>();
 
+    public DbSet<OutboxMessage> OutboxMessages =>
+    Set<OutboxMessage>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -56,6 +58,27 @@ public class TrainingDbContext(
                 table.HasCheckConstraint(
                     "CK_TrainingSessionExercises_PlannedReps",
                     "[PlannedReps] > 0");
+            });
+        });
+
+        modelBuilder.Entity<OutboxMessage>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.Type)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(x => x.Content)
+                .IsRequired();
+
+            entity.Property(x => x.LastError)
+                .HasMaxLength(2000);
+
+            entity.HasIndex(x => new
+            {
+                x.ProcessedAtUtc,
+                x.OccurredAtUtc
             });
         });
 

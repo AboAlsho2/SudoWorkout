@@ -1,8 +1,10 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using TrainingService.Contracts.WorkoutService;
 using TrainingService.Domain.Entities;
 using TrainingService.Integrations.WorkoutService;
+using TrainingService.Messaging;
 using TrainingService.Persistence;
 
 namespace TrainingService.Services;
@@ -11,7 +13,8 @@ namespace TrainingService.Services;
 
 public sealed class TrainingSessionService(
     TrainingDbContext dbContext,
-    WorkoutServiceClient workoutServiceClient)
+    WorkoutServiceClient workoutServiceClient
+    )
 {
     public async Task<CreateTrainingSessionResult> CreateAsync(
         Guid memberId,
@@ -96,26 +99,60 @@ public sealed class TrainingSessionService(
             .ToListAsync(cancellationToken);
     }
 
+
     public async Task<bool> CompleteAsync(
         int sessionId,
         CancellationToken cancellationToken = default)
     {
-        var session = await dbContext.TrainingSessions
-            .FirstOrDefaultAsync(
-                session => session.Id == sessionId,
+        await using var transaction =
+            await dbContext.Database.BeginTransactionAsync(
                 cancellationToken);
 
-        if (session is null || session.Status == SessionStatus.Completed)
+        try
         {
-            return false;
+            var session = await dbContext.TrainingSessions
+                .FirstOrDefaultAsync(
+                    session => session.Id == sessionId,
+                    cancellationToken);
+
+            if (session is null ||
+                session.Status == SessionStatus.Completed)
+            {
+                return false;
+            }
+
+            var completedAtUtc = DateTimeOffset.UtcNow;
+
+            session.Status = SessionStatus.Completed;
+
+            var message = new TrainingSessionCompletedEvent(
+                EventId: Guid.NewGuid(),
+                TrainingSessionId: session.Id,
+                MemberId: session.MemberId,
+                WorkoutPlanId: session.WorkoutPlanId,
+                CompletedAtUtc: completedAtUtc);
+
+            var outboxMessage = new OutboxMessage
+            {
+                Id = message.EventId,
+                Type = nameof(TrainingSessionCompletedEvent),
+                Content = JsonSerializer.Serialize(message),
+                OccurredAtUtc = completedAtUtc
+            };
+
+            dbContext.OutboxMessages.Add(outboxMessage);
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+
+            return true;
         }
-
-        session.Status = SessionStatus.Completed;
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return true;
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
+        }
     }
-
 
 }

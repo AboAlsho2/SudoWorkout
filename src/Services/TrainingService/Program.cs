@@ -2,12 +2,33 @@
 using Microsoft.EntityFrameworkCore;
 using TrainingService.Endpoints;
 using TrainingService.Integrations.WorkoutService;
+using TrainingService.Messaging;
 using TrainingService.Persistence;
 using TrainingService.Services;
+using TrainingService.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
 
+
+builder.Services
+    .AddOptions<RabbitMQOptions>()
+    .Bind(builder.Configuration.GetSection(
+        RabbitMQOptions.SectionName))
+    .Validate(options =>
+        !string.IsNullOrWhiteSpace(options.Host) &&
+        !string.IsNullOrWhiteSpace(options.Username) &&
+        !string.IsNullOrWhiteSpace(options.Password) &&
+        options.Port is > 0 and <= 65535,
+        "RabbitMQ configuration is invalid.")
+    .ValidateOnStart();
+
+builder.Services.AddSingleton<
+    ITrainingEventPublisher,
+    RabbitMQTrainingEventPublisher>();
+
+builder.Services.AddHostedService<
+    OutboxPublisherBackgroundService>();
 
 builder.Services.AddHttpClient<WorkoutServiceClient>(client =>
 {
